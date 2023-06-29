@@ -1,0 +1,17 @@
+<template>
+    <div>
+        {% for slice in slices %}
+        <div class="slice-wrap">
+            {% for area in slice['float_list'] %}
+            <img style="position:absolute; left:{{(area['coord'][0]/psd_width*100)|round(3)}}vw;top:{{(area['coord'][1]/psd_width*100)|round(3)}}vw;width:{{(area['coord'][2]/psd_width*100)|round(3)}}vw;"
+                :src="{{area['img']}}">
+            {% endfor %}
+            <img :src="./slice_{{loop.index}}.png" usemap="#slice_{{loop.index}}">
+            <map name="slice_{{loop.index}}">
+                <area v-for="(item , index) in data.slice_{{loop.index}}" :key="item" @click="handleClickProduct"
+                    shape="rect" :coords="transformDesignPx()">
+            </map>
+        </div>
+        {% endfor %}
+    </div>
+</template>
