@@ -1,21 +1,18 @@
-from psd_parse import parse_psd
+import re
 from jinja2 import Environment, PackageLoader, Template
-
-# 声明一个 package 加载器，会自动去 temp 这个 python包下的 templates 文件夹找所有的文件，即：./temp/templates/*.*
 loader = PackageLoader("temp", "templates")
-env = Environment(loader=loader)  # 生成环境
-
+env = Environment(loader=loader)
 template = env.get_template("template.html")  # 加载某个文件，会从：./temp/templates/ 路径下自动查找这个 test.html
-psd_info = parse_psd('./home.psd', './slices/')
-slices =  psd_info.gen_slices_for_design()
-print(slices)
+def get_filename_from_path(file_path):
+    pattern = r'[^\\/]+(?=\.[^\\/]+$)'
+    match = re.search(pattern, file_path)
+    if match:
+        return match.group(0)
+    else:
+        return None
 
-print(template.render(slices = slices,psd_width=psd_info.psd.width, design_width=375))
-
-# def make_template(slices):
-    
-
-
-# if __name__ == '__main__':
-
-    
+def gen_template(file_path, slices, psd_width, design_width):
+    htmlString = template.render(slices = slices,psd_width=psd_width, design_width=design_width)
+    file_name = get_filename_from_path(file_path)
+    vueTemplate = open(f'{file_name}.vue', "w",encoding="utf-8")
+    vueTemplate.write(htmlString)

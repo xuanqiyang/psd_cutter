@@ -112,32 +112,37 @@ def _cut_slices(psd, slices):
 def group_area_cols(slices):
   grouped_slice_list = [[area for area in slice['area_list']] for slice in slices]
   _slices = []
-  for item in grouped_slice_list:
-    groups = []
-    cols = 0
-    
-    for key, group in groupby(item, key=lambda x: (x['coord'][2], x['coord'][3])):
-      group_list = list(group)
-      area_list = [item1 for item1 in group_list if item1['type'] == 'area']
-      float_list = [item2 for item2 in group_list if item2['type'] == 'float']
-      if len(area_list) > 0:
-        y =  area_list[0]['coord'][1]
-        left = area_list[0]['coord'][0]
-        # 获取列数
-        for area in area_list:
-          if y == area['coord'][1]:
-            cols += 1
-          else:
-            break
+  for group_list in grouped_slice_list:
+    area_list = [item1 for item1 in group_list if item1['type'] == 'area']
+    float_list = [item2 for item2 in group_list if item2['type'] == 'float']
+    cols_area_list = []
+    group_cols_area_list = []
+    if len(area_list) > 0:
+      top = area_list[0]['coord'][1]
+      left = area_list[0]['coord'][0]
+      _area_list = area_list[::]
+      # 获取列数
+      for key, group in groupby(area_list, key=lambda x:(x['coord'][1])):
         gapX = 0
         gapY = 0
-        if len(area_list) > 1:
-          gapX = area_list[1]['coord'][0] - (area_list[0]['coord'][2] + area_list[0]['coord'][0])
-        if len(area_list) > cols:
-          gapY = area_list[cols]['coord'][1] - (area_list[0]['coord'][3] + area_list[0]['coord'][1])
-      groups.append({'area_list':list(map(lambda x:{'top':y, 'left':left,'cols':cols, 'type':x['type'], 'name':x['name'], 'coord':x['coord'], 'text':x['text']} ,area_list)),'float_list':float_list})
-      cols = 0
-    _slices.append(groups)
+        group_area_list = list(group)
+        cols = len(group_area_list)
+        if cols > 0:
+          if len(_area_list) > cols:
+            gapY = area_list[cols]['coord'][1] - (area_list[0]['coord'][3] + area_list[0]['coord'][1]) 
+          if cols > 1:
+            gapX = group_area_list[1]['coord'][0] - (group_area_list[0]['coord'][2] + group_area_list[0]['coord'][0])
+          for area in group_area_list:
+            cols_area_list.append({'top':top, 'left':left,'cols':cols, 'type':area['type'], 'name':area['name'], 'coord':area['coord'], 'text':area['text'], 'gapX':gapX, 'gapY':gapY})
+          _area_list = _area_list[cols:]
+      current_cols = 0
+      for area in cols_area_list:
+        if area['cols'] != current_cols:
+          area_width  = area['coord'][2] - area['coord'][0]
+          area_height =  area['coord'][3] - area['coord'][1]
+          group_cols_area_list.append({'top':area['top'], 'left':area['left'],'cols':area['cols'],'gapX':area['gapX'], 'gapY':area['gapY'],'width':area_width , 'height':area_height})
+          current_cols = area['cols']
+    _slices.append({'area_list':cols_area_list,'group_areas':group_cols_area_list , 'float_list':float_list})
   return _slices
  
 
