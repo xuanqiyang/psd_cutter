@@ -5,7 +5,6 @@ import numpy as np
 from PIL import Image
 import threading
 
-output_dir = './'
 def save_layer_as_png(layer, output_path):
   # 获取图层的图像数据
   image_data = layer.composite()
@@ -57,7 +56,7 @@ def get_slices(psd):
 
 
 # 迭代处理图层和分组
-def process_layers(psd,slices):
+def process_layers(psd_info,slices):
   def get_area_layers(layers):
     for layer in layers:
       if layer.visible:
@@ -78,12 +77,12 @@ def process_layers(psd,slices):
         if layer.is_group():
           get_area_layers(layer)
         if layer.name.endswith('_float'):
-          layers_to_png(layer)
+          psd_info.append_layer_to_queue(layer)
           layer.visible = False
         if not area is None:
           slice['area_list'].append(area)
           slice['area_list'].sort(key=lambda coord: (coord['coord'][1], coord['coord'][0]))
-  get_area_layers(psd._layers)
+  get_area_layers(psd_info.psd._layers)
   return slices 
 
 def get_area_layer_text_list(layer):
@@ -96,18 +95,6 @@ def get_area_layer_text_list(layer):
     text_list.append(text_content)
   return text_list
 
-
-def layers_to_png(layer):
-  # 保存图层为PNG图像文件
-  output_path = output_dir + layer.name + '.png'
-  save_layer_as_png(layer, output_path)
-def _cut_slices(psd, slices):
-  image = psd.composite(layer_filter=lambda x: x.is_visible())
-  for i, slice in enumerate(slices):
-    # 裁剪图像
-    imgPath = f'{output_dir}slice_{i+1}.png'
-    cropped_image = image.crop(slice['slice'])
-    cropped_image.save(imgPath)
 # 每个slice里的area按照连续相同宽高分组
 def group_area_cols(slices):
   grouped_slice_list = [[area for area in slice['area_list']] for slice in slices]
@@ -147,19 +134,43 @@ def group_area_cols(slices):
  
 
 
+def _cut_slices(psd, slices, output):
+  image = psd.composite(layer_filter=lambda x: x.is_visible())
+  for i, slice in enumerate(slices):
+    # 裁剪图像
+    imgPath = f'{output}slice_{i+1}.png'
+    cropped_image = image.crop(slice['slice'])
+    cropped_image.save(imgPath)
+
+
 class PSD:
   slices = []
+  be_save_layers = []
+  output_dir = './'
+  def layers_to_png(self, layer):
+    # 保存图层为PNG图像文件
+    output_path = self.output_dir + layer.name + '.png'
+    save_layer_as_png(layer, output_path)
+  def append_layer_to_queue(self, layer):
+    self.be_save_layers.append(layer)
+  def set_output(self, output):
+    self.output_dir = output 
+    if self.output_dir.endswith('/') == False:
+      self.output_dir = output_dir + '/'
   def cut_slices(self):
-    _cut_slices(self.psd, self.slices)
+    for layer in self.be_save_layers:
+      layer.visible = True
+      self.layers_to_png(layer)
+      layer.visible = False
+    _cut_slices(self.psd, self.slices, self.output_dir)
   def gen_slices_for_design(self):
     grouped_slices = group_area_cols(self.slices)
     return grouped_slices
   def __init__(self, path):
     self.psd = PSDImage.open(path)
-    self.slices = process_layers(self.psd, [{'slice':slice, 'area_list':[]} for slice in get_slices(self.psd)])
+    self.slices = process_layers(self, [{'slice':slice, 'area_list':[]} for slice in get_slices(self.psd)])
 def parse_psd(path,slices_dir):
-  output_dir = slices_dir
-  if output_dir.endswith('/') == False:
-    output_dir = output_dir + '/'
-  return PSD(path)
+  this = PSD(path)
+  this.set_output(slices_dir)
+  return this
 
