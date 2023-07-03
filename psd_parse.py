@@ -5,19 +5,6 @@ import numpy as np
 from PIL import Image
 import threading
 
-def save_layer_as_png(layer, output_path):
-  # 获取图层的图像数据
-  image_data = layer.composite()
-  # 将图像数据转换为NumPy数组
-  # image_array = np.array(image_data)
-  # 提取非透明像素的边界框
-  # non_transparent_pixels = image_array[..., 3] > 0  # Alpha通道大于0的像素即为非透明像素
-  # min_row, max_row = np.where(non_transparent_pixels.any(axis=1))[0][[0, -1]]
-  # min_col, max_col = np.where(non_transparent_pixels.any(axis=0))[0][[0, -1]]
-  # 裁剪图像数据
-  # cropped_image_data = image_data.crop((min_col, min_row, max_col + 1, max_row + 1))
-  # 保存为PNG图像文件
-  image_data.save(output_path, format='PNG')
 
 def in_slice_area(layer, slices):
   target = None
@@ -72,8 +59,9 @@ def process_layers(psd_info,slices):
             area = {'type':type,'name':layer.name, 'coord':get_layer_position_in_slice(layer,slice['slice'])}
             if layer.name.endswith('_area'):
               area['text'] = get_area_layer_text_list(layer)
+              area['primary_text'] =  get_primary_key(layer)
             if layer.name.endswith('_float'):
-              area['img'] = f'./{layer.name}.png'           
+              area['img'] = f'{layer.name}.png'           
         if layer.is_group():
           get_area_layers(layer)
         if layer.name.endswith('_float'):
@@ -95,6 +83,12 @@ def get_area_layer_text_list(layer):
     text_list.append(text_content)
   return text_list
 
+def get_primary_key(layer):
+  if layer.is_group():
+    for sub_layer in layer:
+      get_primary_key(sub_layer)
+  elif layer.kind == 'type' and layer.name.endswith('_primary'):
+    layer.text
 # 每个slice里的area按照连续相同宽高分组
 def group_area_cols(slices):
   grouped_slice_list = [[area for area in slice['area_list']] for slice in slices]
@@ -133,36 +127,48 @@ def group_area_cols(slices):
   return _slices
  
 
-
-def _cut_slices(psd, slices, output):
+def save_layer_as_png(layer, output_path,compress_level=0):
+  # 获取图层的图像数据
+  image_data = layer.composite()
+  # 将图像数据转换为NumPy数组
+  # image_array = np.array(image_data)
+  # 提取非透明像素的边界框
+  # non_transparent_pixels = image_array[..., 3] > 0  # Alpha通道大于0的像素即为非透明像素
+  # min_row, max_row = np.where(non_transparent_pixels.any(axis=1))[0][[0, -1]]
+  # min_col, max_col = np.where(non_transparent_pixels.any(axis=0))[0][[0, -1]]
+  # 裁剪图像数据
+  # cropped_image_data = image_data.crop((min_col, min_row, max_col + 1, max_row + 1))
+  # 保存为PNG图像文件
+  image_data.save(output_path, format='PNG',compress_level=compress_level)
+def _cut_slices(psd, slices, output, compress_level=0):
   image = psd.composite(layer_filter=lambda x: x.is_visible())
   for i, slice in enumerate(slices):
     # 裁剪图像
     imgPath = f'{output}slice_{i+1}.png'
     cropped_image = image.crop(slice['slice'])
-    cropped_image.save(imgPath)
+    cropped_image.save(imgPath, compress_level=compress_level)
 
 
 class PSD:
   slices = []
   be_save_layers = []
-  output_dir = './'
-  def layers_to_png(self, layer):
+  output_dir = '.'
+  def layers_to_png(self, layer,compress_level):
     # 保存图层为PNG图像文件
     output_path = self.output_dir + layer.name + '.png'
-    save_layer_as_png(layer, output_path)
+    save_layer_as_png(layer, output_path, compress_level)
   def append_layer_to_queue(self, layer):
     self.be_save_layers.append(layer)
   def set_output(self, output):
     self.output_dir = output 
     if self.output_dir.endswith('/') == False:
       self.output_dir = output_dir + '/'
-  def cut_slices(self):
+  def cut_slices(self, compress=0):
     for layer in self.be_save_layers:
       layer.visible = True
-      self.layers_to_png(layer)
+      self.layers_to_png(layer, compress)
       layer.visible = False
-    _cut_slices(self.psd, self.slices, self.output_dir)
+    _cut_slices(self.psd, self.slices, self.output_dir, compress)
   def gen_slices_for_design(self):
     grouped_slices = group_area_cols(self.slices)
     return grouped_slices

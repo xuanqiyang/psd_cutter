@@ -12,7 +12,11 @@ def get_filename_from_path(file_path):
         return None
 
 def gen_template(file_path, slices, psd_width, design_width):
+    # make_source_data(slices, img_dir)
     htmlString = template.render(slices = slices,psd_width=psd_width, design_width=design_width)
     file_name = get_filename_from_path(file_path)
     vueTemplate = open(f'{file_name}.vue', "w",encoding="utf-8")
     vueTemplate.write(htmlString)
+
+# def make_source_data(slices, img_dir):
+
