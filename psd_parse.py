@@ -86,9 +86,9 @@ def get_area_layer_text_list(layer):
 def get_primary_key(layer):
   if layer.is_group():
     for sub_layer in layer:
-      get_primary_key(sub_layer)
+      return get_primary_key(sub_layer)
   elif layer.kind == 'type' and layer.name.endswith('_primary'):
-    layer.text
+    return layer.text
 # 每个slice里的area按照连续相同宽高分组
 def group_area_cols(slices):
   grouped_slice_list = [[area for area in slice['area_list']] for slice in slices]
@@ -114,7 +114,7 @@ def group_area_cols(slices):
           if cols > 1:
             gapX = group_area_list[1]['coord'][0] - (group_area_list[0]['coord'][2] + group_area_list[0]['coord'][0])
           for area in group_area_list:
-            cols_area_list.append({'top':top, 'left':left,'cols':cols, 'type':area['type'], 'name':area['name'], 'coord':area['coord'], 'text':area['text'], 'gapX':gapX, 'gapY':gapY})
+            cols_area_list.append({'top':top, 'left':left,'cols':cols, 'type':area['type'], 'name':area['name'], 'coord':area['coord'], 'text':area['text'], 'primary_text':area['primary_text'], 'gapX':gapX, 'gapY':gapY})
           _area_list = _area_list[cols:]
       current_cols = 0
       for area in cols_area_list:
@@ -129,7 +129,7 @@ def group_area_cols(slices):
 
 def save_layer_as_png(layer, output_path,compress_level=0):
   # 获取图层的图像数据
-  image_data = layer.composite()
+  image_data = layer.topil()
   # 将图像数据转换为NumPy数组
   # image_array = np.array(image_data)
   # 提取非透明像素的边界框
