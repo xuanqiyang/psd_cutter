@@ -129,7 +129,7 @@ def group_area_cols(slices):
 
 def save_layer_as_png(layer, output_path,compress_level=0):
   # 获取图层的图像数据
-  image_data = layer.topil()
+  image_data = layer.composite()
   # 将图像数据转换为NumPy数组
   # image_array = np.array(image_data)
   # 提取非透明像素的边界框
