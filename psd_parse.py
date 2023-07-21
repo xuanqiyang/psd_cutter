@@ -4,7 +4,7 @@ from itertools import groupby
 import numpy as np
 from PIL import Image
 import threading
-
+import os
 
 def in_slice_area(layer, slices):
   target = None
@@ -166,6 +166,8 @@ class PSD:
     self.output_dir = output 
     if self.output_dir.endswith('/') == False:
       self.output_dir = output_dir + '/'
+    if not os.path.exists(self.output_dir):
+      os.makedirs(self.output_dir)
   def cut_slices(self, compress=0):
     for layer in self.be_save_layers:
       layer.visible = True
