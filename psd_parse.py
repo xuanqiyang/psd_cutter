@@ -84,11 +84,14 @@ def get_area_layer_text_list(layer):
   return text_list
 
 def get_primary_key(layer):
+  if layer.kind == 'type' and layer.name.endswith('_primary'):
+    return layer.text
   if layer.is_group():
     for sub_layer in layer:
-      return get_primary_key(sub_layer)
-  elif layer.kind == 'type' and layer.name.endswith('_primary'):
-    return layer.text
+        result = get_primary_key(sub_layer)
+        if result:
+          return result
+  return None
 # 每个slice里的area按照连续相同宽高分组
 def group_area_cols(slices):
   grouped_slice_list = [[area for area in slice['area_list']] for slice in slices]

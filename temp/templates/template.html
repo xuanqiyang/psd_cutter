@@ -2,17 +2,17 @@
     <div>
         {% set ratio = design_width/psd_width %}
         {%- for slice in slices -%}
-        {% set outer_index = loop.index %}
+        {% set outer_index = loop.index0 %}
         <div class="slice-wrap">
             {%- for area in slice['float_list'] -%}
             <img style="position:absolute; left:{{(area['coord'][0]/psd_width*100)|round(3)}}vw;top:{{(area['coord'][1]/psd_width*100)|round(3)}}vw;width:{{(area['coord'][2]/psd_width*100)|round(3)}}vw;"
                 src="{{img_dir}}{{area['img']}}">
             {% endfor %}
-            <img src="{{img_dir}}slice_{{loop.index}}.png" usemap="#slice_{{loop.index}}">
+            <img :src="data[{{outer_index}}].img" usemap="#slice_{{loop.index}}">
             {%- if slice['area_list']|length > 0 -%}
             <map name="slice_{{loop.index}}">
                 {%- for area in slice['group_areas'] %}
-                <area  v-for="(item , index) in data.slice_{{outer_index}}" :key="item" @click="handleClickProduct"
+                <area  v-for="(item , index) in data[{{outer_index}}].productIds" :key="item" @click="handleClickProduct(item)"
                     shape="rect" :coords="transformDesignPx([
                     {{(area['left']*ratio)|round}}+(index%{{area['cols']}})*({{(area['gapX']*ratio)|round}}+{{(area['width']*ratio)|round}}),
                     {{(area['top']*ratio)|round}}+Math.floor(index/{{area['cols']}})*{{(area['gapY']*ratio)|round}}+Math.floor(index/{{area['cols']}})*{{(area['height']*ratio)|round}},
