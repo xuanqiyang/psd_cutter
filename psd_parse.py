@@ -1,9 +1,9 @@
 from psd_tools import PSDImage
 from psd_tools.constants import Resource
 from itertools import groupby
-import numpy as np
-from PIL import Image
-import threading
+# import numpy as np
+# from PIL import Image
+# import threading
 import os
 
 def in_slice_area(layer, slices):
