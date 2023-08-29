@@ -19,6 +19,7 @@ def is_top_level_layer(layer, psd):
     return layer.parent == psd 
 # @return (x,y,w,h)
 def get_layer_position_in_slice(layer, slice):
+  print(layer.bbox)
   return (layer.bbox[0]-slice[0],layer.bbox[1]-slice[1],layer.size[0], layer.size[1])
 # 获取切片
 # @return list:tuple(left,top,right,bottom)
@@ -122,8 +123,8 @@ def group_area_cols(slices):
       current_cols = 0
       for area in cols_area_list:
         if area['cols'] != current_cols:
-          area_width  = area['coord'][2] - area['coord'][0]
-          area_height =  area['coord'][3] - area['coord'][1]
+          area_width  = area['coord'][2] 
+          area_height =  area['coord'][3] 
           group_cols_area_list.append({'top':area['top'], 'left':area['left'],'cols':area['cols'],'gapX':area['gapX'], 'gapY':area['gapY'],'width':area_width , 'height':area_height})
           current_cols = area['cols']
     _slices.append({'area_list':cols_area_list,'group_areas':group_cols_area_list , 'float_list':float_list})
